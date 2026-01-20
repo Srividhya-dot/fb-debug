@@ -1,59 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Facebook → CRM Login Debug</title>
+
   <style>
-    body { font-family: Arial; padding: 20px; }
-    .card { border: 1px solid #ddd; padding: 15px; margin-top: 15px; }
-    button { padding: 10px 15px; cursor: pointer; }
-    pre { background: #f7f7f7; padding: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      position: relative;
+      z-index: 9999;
+    }
+    pre {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+    }
   </style>
 </head>
+
 <body>
 
-<h2>Facebook → CRM Login Debug</h2>
+  <h2>Facebook → CRM Login Debug</h2>
 
-<div class="card">
-  <button onclick="fbLogin()">Login with Facebook</button>
-</div>
+  <button id="fbBtn">Login with Facebook</button>
 
-<div class="card">
-  <h3>Login Result</h3>
   <pre id="result">Not logged in</pre>
-</div>
 
-<script>
-  window.fbAsyncInit = function () {
-    FB.init({
-      appId: '1252773156743952',   // 🔴 keep correct App ID
-      cookie: true,
-      xfbml: false,
-      version: 'v19.0'
+  <!-- Facebook SDK -->
+  <script>
+    // PROOF JS IS RUNNING
+    console.log('JS loaded');
+
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId: '1252773156743952',   // 🔴 replace with your REAL app ID
+        cookie: true,
+        xfbml: false,
+        version: 'v19.0'
+      });
+
+      console.log('FB SDK initialized');
+    };
+
+    (function (d, s, id) {
+      if (d.getElementById(id)) return;
+      var js = d.createElement(s);
+      js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      d.body.appendChild(js);
+    }(document, 'script', 'facebook-jssdk'));
+
+    // CLICK HANDLER (NO INLINE JS)
+    document.getElementById('fbBtn').addEventListener('click', function () {
+      console.log('Button clicked');
+
+      FB.login(function (response) {
+        console.log('FB response:', response);
+        document.getElementById('result').textContent =
+          JSON.stringify(response, null, 2);
+      }, {
+        scope: 'public_profile,email'   // ✅ ONLY VALID JS LOGIN SCOPES
+      });
     });
-  };
-
-  (function (d, s, id) {
-    if (d.getElementById(id)) return;
-    var js = d.createElement(s); js.id = id;
-    js.src = "https://connect.facebook.net/en_US/sdk.js";
-    d.getElementsByTagName(s)[0].parentNode.insertBefore(js, s);
-  }(document, 'script', 'facebook-jssdk'));
-
-  function fbLogin() {
-    FB.login(function (response) {
-      document.getElementById('result').textContent =
-        JSON.stringify(response, null, 2);
-
-      if (response.status === 'connected') {
-        console.log('Login success');
-        console.log('User token:', response.authResponse.accessToken);
-      }
-    }, {
-      scope: 'public_profile,email'   // ✅ ONLY valid login scopes
-    });
-  }
-</script>
+  </script>
 
 </body>
 </html>
