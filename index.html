@@ -3,95 +3,124 @@
 <head>
   <title>Facebook → CRM Permission Debug</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
-    body { font-family: Arial; background:#f4f6f8; padding:20px; }
-    .card { background:#fff; padding:15px; border-radius:8px; margin-bottom:15px; }
-    .ok { color: green; }
-    .fail { color: red; }
-    button { padding:10px 15px; font-size:16px; cursor:pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 15px;
+    }
+    .card {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 12px 18px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .ok {
+      color: green;
+    }
+    .fail {
+      color: red;
+    }
   </style>
 </head>
+
 <body>
 
-<h2>Facebook → CRM Debug (Real Login)</h2>
+  <h2>Facebook → CRM Permission Debug</h2>
 
-<div class="card">
-  <button onclick="fbLogin()">Login with Facebook</button>
-</div>
+  <div class="card">
+    <button onclick="fbLogin()">Login with Facebook</button>
+  </div>
 
-<div class="card" id="result">
-  <p>Please login to check permission status.</p>
-</div>
+  <div class="card" id="result">
+    <p>Please log in to check permission status.</p>
+  </div>
 
-<!-- Facebook SDK -->
-<script>
-window.fbAsyncInit = function() {
-  FB.init({
-    appId      : '122106621806930719',
-    cookie     : true,
-    xfbml      : false,
-    version    : 'v19.0'
-  });
-};
+  <!-- Facebook SDK -->
+  <script>
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId: '122106621806930719',   //
+        cookie: true,
+        xfbml: false,
+        version: 'v19.0'
+      });
+    };
 
-(function(d, s, id){
-  var js, fjs = d.getElementsByTagName(s)[0];
-  if (d.getElementById(id)) return;
-  js = d.createElement(s); js.id = id;
-  js.src = "https://connect.facebook.net/en_US/sdk.js";
-  fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));
+    (function (d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s);
+      js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+  </script>
 
-function fbLogin() {
-  FB.login(function(response) {
-    if (!response.authResponse) {
-      document.getElementById("result").innerHTML =
-        "<p class='fail'>❌ Facebook login cancelled or failed</p>";
-      return;
-    }
-    checkPermissions();
-  }, {
-    scope: 'pages_manage_metadata,pages_show_list,pages_read_engagement,leads_retrieval'
-  });
-}
-
-function checkPermissions() {
-  FB.api('/me/permissions', function(res) {
-
-    const required = [
-      'pages_manage_metadata',
-      'pages_show_list',
-      'pages_read_engagement',
-      'leads_retrieval'
-    ];
-
-    let html = "<h3>Permission Status</h3>";
-
-    required.forEach(p => {
-      const found = res.data.find(x => x.permission === p && x.status === 'granted');
-      if (found) {
-        html += `<p class="ok">✅ ${p} – Granted</p>`;
-      } else {
-        html += `<p class="fail">❌ ${p} – Missing / Restricted</p>`;
-      }
-    });
-
-    html += "<hr>";
-
-    const missing = required.filter(p =>
-      !res.data.find(x => x.permission === p && x.status === 'granted')
-    );
-
-    if (missing.length > 0) {
-      html += "<p class='fail'><b>Result:</b> Leads will NOT flow to CRM</p>";
-    } else {
-      html += "<p class='ok'><b>Result:</b> Permissions OK. Check CRM side.</p>";
+  <script>
+    function fbLogin() {
+      FB.login(function (response) {
+        if (!response.authResponse) {
+          document.getElementById("result").innerHTML =
+            "<p class='fail'>❌ Facebook login cancelled or failed</p>";
+          return;
+        }
+        checkPermissions();
+      }, {
+        scope: 'pages_manage_metadata,pages_show_list,pages_read_engagement,leads_retrieval'
+      });
     }
 
-    document.getElementById("result").innerHTML = html;
-  });
-}
-</script>
+    function checkPermissions() {
+      FB.api('/me/permissions', function (res) {
+
+        const requiredPermissions = [
+          'pages_manage_metadata',
+          'pages_show_list',
+          'pages_read_engagement',
+          'leads_retrieval'
+        ];
+
+        let html = "<h3>Permission Status</h3>";
+
+        requiredPermissions.forEach(function (perm) {
+          const granted = res.data.find(
+            p => p.permission === perm && p.status === 'granted'
+          );
+
+          if (granted) {
+            html += "<p class='ok'>✅ " + perm + " – Granted</p>";
+          } else {
+            html += "<p class='fail'>❌ " + perm + " – Missing / Restricted</p>";
+          }
+        });
+
+        html += "<hr>";
+
+        const missing = requiredPermissions.filter(
+          perm => !res.data.find(p => p.permission === perm && p.status === 'granted')
+        );
+
+        if (missing.length > 0) {
+          html += "<p class='fail'><b>Result:</b> Leads will NOT flow to CRM</p>";
+        } else {
+          html += "<p class='ok'><b>Result:</b> Permissions OK. Leads should flow.</p>";
+        }
+
+        document.getElementById("result").innerHTML = html;
+      });
+    }
+  </script>
 
 </body>
 </html>
