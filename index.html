@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Facebook → CRM Login Debug</title>
 
   <style>
@@ -13,14 +13,13 @@
       padding: 12px 20px;
       font-size: 16px;
       cursor: pointer;
-      position: relative;
-      z-index: 9999;
     }
     pre {
       margin-top: 20px;
       padding: 15px;
       background: #f4f4f4;
       border: 1px solid #ddd;
+      white-space: pre-wrap;
     }
   </style>
 </head>
@@ -35,12 +34,11 @@
 
   <!-- Facebook SDK -->
   <script>
-    // PROOF JS IS RUNNING
     console.log('JS loaded');
 
     window.fbAsyncInit = function () {
       FB.init({
-        appId: '1252773156743952',   // 🔴 replace with your REAL app ID
+        appId: '1252773156743952',   // 🔴 replace with your real App ID
         cookie: true,
         xfbml: false,
         version: 'v19.0'
@@ -57,17 +55,20 @@
       d.body.appendChild(js);
     }(document, 'script', 'facebook-jssdk'));
 
-    // CLICK HANDLER (NO INLINE JS)
     document.getElementById('fbBtn').addEventListener('click', function () {
-      console.log('Button clicked');
+      console.log('Login button clicked');
 
       FB.login(function (response) {
         console.log('FB response:', response);
+
         document.getElementById('result').textContent =
           JSON.stringify(response, null, 2);
-      }, {
-        scope: 'public_profile'   // ✅ ONLY VALID JS LOGIN SCOPES
+
+        if (response.status === 'connected') {
+          console.log('Access Token:', response.authResponse.accessToken);
+        }
       });
+      // ⚠️ No scope passed → defaults to public_profile (REQUIRED for Business Login)
     });
   </script>
 
