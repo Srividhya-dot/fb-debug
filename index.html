@@ -1,76 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Facebook → CRM Login Debug</title>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 40px;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    pre {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f4f4f4;
-      border: 1px solid #ddd;
-      white-space: pre-wrap;
-    }
-  </style>
-</head>
-
-<body>
-
-  <h2>Facebook → CRM Login Debug</h2>
-
-  <button id="fbBtn">Login with Facebook</button>
-
-  <pre id="result">Not logged in</pre>
-
-  <!-- Facebook SDK -->
-  <script>
-    console.log('JS loaded');
-
-    window.fbAsyncInit = function () {
-      FB.init({
-        appId: '1252773156743952',   // 🔴 replace with your real App ID
-        cookie: true,
-        xfbml: false,
-        version: 'v19.0'
-      });
-
-      console.log('FB SDK initialized');
-    };
-
-    (function (d, s, id) {
-      if (d.getElementById(id)) return;
-      var js = d.createElement(s);
-      js.id = id;
-      js.src = "https://connect.facebook.net/en_US/sdk.js";
-      d.body.appendChild(js);
-    }(document, 'script', 'facebook-jssdk'));
-
-    document.getElementById('fbBtn').addEventListener('click', function () {
-      console.log('Login button clicked');
-
-      FB.login(function (response) {
-        console.log('FB response:', response);
-
-        document.getElementById('result').textContent =
-          JSON.stringify(response, null, 2);
-
-        if (response.status === 'connected') {
-          console.log('Access Token:', response.authResponse.accessToken);
-        }
-      });
-      // ⚠️ No scope passed → defaults to public_profile (REQUIRED for Business Login)
+<script>
+  window.fbAsyncInit = function () {
+    FB.init({
+      appId: '1252773156743952',
+      cookie: true,
+      xfbml: false,
+      version: 'v19.0'
     });
-  </script>
+  };
 
-</body>
-</html>
+  (function (d, s, id) {
+    if (d.getElementById(id)) return;
+    var js = d.createElement(s);
+    js.id = id;
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    d.body.appendChild(js);
+  }(document, 'script', 'facebook-jssdk'));
+
+  function fbLogin() {
+    FB.login(function (response) {
+      document.getElementById('output').textContent =
+        JSON.stringify(response, null, 2);
+
+      if (response.status === 'connected') {
+        console.log('User Access Token:', response.authResponse.accessToken);
+      }
+    }, {
+      scope: 'business_management',   // ✅ REQUIRED FOR BUSINESS LOGIN
+      auth_type: 'rerequest'
+    });
+  }
+</script>
