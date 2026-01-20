@@ -1,25 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Facebook Permission Debugger</title>
+  <title>Facebook → CRM Permission Debug</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial; background:#f4f6f8; padding:20px; }
-    h2 { margin-bottom: 10px; }
-    .card {
-      background:#fff;
-      padding:15px;
-      margin-bottom:15px;
-      border-radius:8px;
-    }
+    .card { background:#fff; padding:15px; border-radius:8px; margin-bottom:15px; }
     .ok { color: green; }
     .fail { color: red; }
-    button { padding:10px 15px; font-size:16px; }
+    button { padding:10px 15px; font-size:16px; cursor:pointer; }
   </style>
 </head>
 <body>
 
-<h2>Facebook → CRM Permission Debug</h2>
+<h2>Facebook → CRM Debug (Real Login)</h2>
 
 <div class="card">
   <button onclick="fbLogin()">Login with Facebook</button>
@@ -31,30 +25,28 @@
 
 <!-- Facebook SDK -->
 <script>
-  window.fbAsyncInit = function() {
-    FB.init({
-      appId      : '122106621806930719',
-      cookie     : true,
-      xfbml      : false,
-      version    : 'v19.0'
-    });
-  };
+window.fbAsyncInit = function() {
+  FB.init({
+    appId      : '122106621806930719',
+    cookie     : true,
+    xfbml      : false,
+    version    : 'v19.0'
+  });
+};
 
-  (function(d, s, id){
-     var js, fjs = d.getElementsByTagName(s)[0];
-     if (d.getElementById(id)) {return;}
-     js = d.createElement(s); js.id = id;
-     js.src = "https://connect.facebook.net/en_US/sdk.js";
-     fjs.parentNode.insertBefore(js, fjs);
-   }(document, 'script', 'facebook-jssdk'));
-</script>
+(function(d, s, id){
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "https://connect.facebook.net/en_US/sdk.js";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
 
-<script>
 function fbLogin() {
   FB.login(function(response) {
     if (!response.authResponse) {
       document.getElementById("result").innerHTML =
-        "<p class='fail'>❌ Facebook login failed</p>";
+        "<p class='fail'>❌ Facebook login cancelled or failed</p>";
       return;
     }
     checkPermissions();
@@ -85,16 +77,15 @@ function checkPermissions() {
     });
 
     html += "<hr>";
-    html += "<p><b>Conclusion:</b></p>";
 
     const missing = required.filter(p =>
       !res.data.find(x => x.permission === p && x.status === 'granted')
     );
 
     if (missing.length > 0) {
-      html += "<p class='fail'>❌ Leads will NOT flow to CRM</p>";
+      html += "<p class='fail'><b>Result:</b> Leads will NOT flow to CRM</p>";
     } else {
-      html += "<p class='ok'>✅ Permissions OK. Check CRM side.</p>";
+      html += "<p class='ok'><b>Result:</b> Permissions OK. Check CRM side.</p>";
     }
 
     document.getElementById("result").innerHTML = html;
