@@ -1,126 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Facebook → CRM Permission Debug</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <meta charset="UTF-8">
+  <title>Facebook → CRM Login Debug</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 20px;
-    }
-    h2 {
-      margin-bottom: 15px;
-    }
-    .card {
-      background: #ffffff;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    button {
-      padding: 12px 18px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .ok {
-      color: green;
-    }
-    .fail {
-      color: red;
-    }
+    body { font-family: Arial; padding: 20px; }
+    .card { border: 1px solid #ddd; padding: 15px; margin-top: 15px; }
+    button { padding: 10px 15px; cursor: pointer; }
+    pre { background: #f7f7f7; padding: 10px; }
   </style>
 </head>
-
 <body>
 
-  <h2>Facebook → CRM Permission Debug</h2>
+<h2>Facebook → CRM Login Debug</h2>
 
-  <div class="card">
-    <button onclick="fbLogin()">Login with Facebook</button>
-  </div>
+<div class="card">
+  <button onclick="fbLogin()">Login with Facebook</button>
+</div>
 
-  <div class="card" id="result">
-    <p>Please log in to check permission status.</p>
-  </div>
+<div class="card">
+  <h3>Login Result</h3>
+  <pre id="result">Not logged in</pre>
+</div>
 
-  <!-- Facebook SDK -->
-  <script>
-    window.fbAsyncInit = function () {
-      FB.init({
-        appId: '1252773156743952',   //
-        cookie: true,
-        xfbml: false,
-        version: 'v19.0'
-      });
-    };
+<script>
+  window.fbAsyncInit = function () {
+    FB.init({
+      appId: '1252773156743952',   // 🔴 keep correct App ID
+      cookie: true,
+      xfbml: false,
+      version: 'v19.0'
+    });
+  };
 
-    (function (d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
-      js = d.createElement(s);
-      js.id = id;
-      js.src = "https://connect.facebook.net/en_US/sdk.js";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-  </script>
+  (function (d, s, id) {
+    if (d.getElementById(id)) return;
+    var js = d.createElement(s); js.id = id;
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    d.getElementsByTagName(s)[0].parentNode.insertBefore(js, s);
+  }(document, 'script', 'facebook-jssdk'));
 
-  <script>
-    function fbLogin() {
-      FB.login(function (response) {
-        if (!response.authResponse) {
-          document.getElementById("result").innerHTML =
-            "<p class='fail'>❌ Facebook login cancelled or failed</p>";
-          return;
-        }
-        checkPermissions();
-      }, {
-        scope: 'pages_manage_metadata,pages_show_list,pages_read_engagement,leads_retrieval'
-      });
-    }
+  function fbLogin() {
+    FB.login(function (response) {
+      document.getElementById('result').textContent =
+        JSON.stringify(response, null, 2);
 
-    function checkPermissions() {
-      FB.api('/me/permissions', function (res) {
-
-        const requiredPermissions = [
-          'pages_manage_metadata',
-          'pages_show_list',
-          'pages_read_engagement',
-          'leads_retrieval'
-        ];
-
-        let html = "<h3>Permission Status</h3>";
-
-        requiredPermissions.forEach(function (perm) {
-          const granted = res.data.find(
-            p => p.permission === perm && p.status === 'granted'
-          );
-
-          if (granted) {
-            html += "<p class='ok'>✅ " + perm + " – Granted</p>";
-          } else {
-            html += "<p class='fail'>❌ " + perm + " – Missing / Restricted</p>";
-          }
-        });
-
-        html += "<hr>";
-
-        const missing = requiredPermissions.filter(
-          perm => !res.data.find(p => p.permission === perm && p.status === 'granted')
-        );
-
-        if (missing.length > 0) {
-          html += "<p class='fail'><b>Result:</b> Leads will NOT flow to CRM</p>";
-        } else {
-          html += "<p class='ok'><b>Result:</b> Permissions OK. Leads should flow.</p>";
-        }
-
-        document.getElementById("result").innerHTML = html;
-      });
-    }
-  </script>
+      if (response.status === 'connected') {
+        console.log('Login success');
+        console.log('User token:', response.authResponse.accessToken);
+      }
+    }, {
+      scope: 'public_profile,email'   // ✅ ONLY valid login scopes
+    });
+  }
+</script>
 
 </body>
 </html>
