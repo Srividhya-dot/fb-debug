@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Facebook → CRM Debug (Simulation)</title>
+  <title>Facebook Permission Debugger</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial; background:#f4f6f8; padding:20px; }
@@ -11,76 +11,94 @@
       padding:15px;
       margin-bottom:15px;
       border-radius:8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    button {
-      padding:10px 15px;
-      margin:5px;
-      cursor:pointer;
     }
     .ok { color: green; }
     .fail { color: red; }
+    button { padding:10px 15px; font-size:16px; }
   </style>
 </head>
 <body>
 
-<h2>Facebook → CRM Debug Page (Dummy Simulation)</h2>
+<h2>Facebook → CRM Permission Debug</h2>
 
 <div class="card">
-  <p>Select a scenario to simulate:</p>
-  <button onclick="simulate('missing_permission')">Missing Permission</button>
-  <button onclick="simulate('not_admin')">Not Page Admin</button>
-  <button onclick="simulate('token_expired')">Token Expired</button>
-  <button onclick="simulate('all_ok')">All Good</button>
+  <button onclick="fbLogin()">Login with Facebook</button>
 </div>
 
 <div class="card" id="result">
-  <p>No test run yet.</p>
+  <p>Please login to check permission status.</p>
 </div>
 
+<!-- Facebook SDK -->
 <script>
-function simulate(type) {
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '122106621806930719',
+      cookie     : true,
+      xfbml      : false,
+      version    : 'v19.0'
+    });
+  };
 
-  let result = "";
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "https://connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+</script>
 
-  if (type === "missing_permission") {
-    result = `
-      <h3>Permission Check</h3>
-      <p class="fail">❌ leads_retrieval – Missing</p>
-      <p class="ok">✅ pages_manage_metadata – Granted</p>
-      <p class="ok">✅ pages_show_list – Granted</p>
-      <p class="fail">❌ pages_read_engagement – Missing</p>
-      <p><b>Result:</b> Leads will NOT flow.</p>
-    `;
-  }
+<script>
+function fbLogin() {
+  FB.login(function(response) {
+    if (!response.authResponse) {
+      document.getElementById("result").innerHTML =
+        "<p class='fail'>❌ Facebook login failed</p>";
+      return;
+    }
+    checkPermissions();
+  }, {
+    scope: 'pages_manage_metadata,pages_show_list,pages_read_engagement,leads_retrieval'
+  });
+}
 
-  if (type === "not_admin") {
-    result = `
-      <h3>User Role Check</h3>
-      <p class="fail">❌ You are NOT a Page Admin</p>
-      <p><b>Result:</b> Leads will NOT flow.</p>
-    `;
-  }
+function checkPermissions() {
+  FB.api('/me/permissions', function(res) {
 
-  if (type === "token_expired") {
-    result = `
-      <h3>Access Token Check</h3>
-      <p class="fail">❌ Access token expired or revoked</p>
-      <p><b>Result:</b> Meta has blocked data access.</p>
-    `;
-  }
+    const required = [
+      'pages_manage_metadata',
+      'pages_show_list',
+      'pages_read_engagement',
+      'leads_retrieval'
+    ];
 
-  if (type === "all_ok") {
-    result = `
-      <h3>Status Check</h3>
-      <p class="ok">✅ All required permissions granted</p>
-      <p class="ok">✅ User is Page Admin</p>
-      <p class="ok">✅ Token active</p>
-      <p><b>Result:</b> Leads SHOULD flow. Check CRM if not.</p>
-    `;
-  }
+    let html = "<h3>Permission Status</h3>";
 
-  document.getElementById("result").innerHTML = result;
+    required.forEach(p => {
+      const found = res.data.find(x => x.permission === p && x.status === 'granted');
+      if (found) {
+        html += `<p class="ok">✅ ${p} – Granted</p>`;
+      } else {
+        html += `<p class="fail">❌ ${p} – Missing / Restricted</p>`;
+      }
+    });
+
+    html += "<hr>";
+    html += "<p><b>Conclusion:</b></p>";
+
+    const missing = required.filter(p =>
+      !res.data.find(x => x.permission === p && x.status === 'granted')
+    );
+
+    if (missing.length > 0) {
+      html += "<p class='fail'>❌ Leads will NOT flow to CRM</p>";
+    } else {
+      html += "<p class='ok'>✅ Permissions OK. Check CRM side.</p>";
+    }
+
+    document.getElementById("result").innerHTML = html;
+  });
 }
 </script>
 
