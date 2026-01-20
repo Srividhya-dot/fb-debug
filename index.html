@@ -1,86 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Facebook → CRM Debug Page</title>
+  <title>Facebook Lead Debug</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 20px;
-    }
-    h2 {
-      color: #333;
-    }
-    .card {
-      background: #ffffff;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .ok {
-      color: green;
-    }
-    .fail {
-      color: red;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+    body { font-family: Arial; background:#f4f6f8; padding:20px; }
+    .card { background:#fff; padding:15px; margin-bottom:15px; border-radius:8px; }
+    .ok { color:green; }
+    .fail { color:red; }
+    button { padding:10px 20px; font-size:16px; }
   </style>
 </head>
 <body>
 
-<h2>Facebook → CRM Debug Page</h2>
+<h2>Facebook → CRM Debug Tool</h2>
 
 <div class="card">
-  <p>This page helps you understand why Facebook leads may not be coming to your CRM.</p>
-  <button onclick="runDebug()">Run Debug Check</button>
+  <button onclick="fbLogin()">Login with Facebook</button>
 </div>
 
-<div class="card" id="result">
-  <p>Click the button above to check connection status.</p>
+<div class="card" id="output">
+  <p>Login to start debugging.</p>
 </div>
 
 <script>
-  function runDebug() {
-
-    // REQUIRED PERMISSIONS
-    var requiredPermissions = [
-      "pages_manage_metadata",
-      "leads_retrieval",
-      "pages_show_list",
-      "pages_read_engagement",
-      "Business Asset User Profile Access"
-    ];
-
-    // SIMULATED GRANTED PERMISSIONS (for demo)
-    var grantedPermissions = [
-      "pages_manage_metadata",
-      "pages_show_list"
-    ];
-
-    var html = "<h3>Permission Check</h3>";
-
-    requiredPermissions.forEach(function(permission) {
-      if (grantedPermissions.includes(permission)) {
-        html += "<p class='ok'>✅ " + permission + " : Granted</p>";
-      } else {
-        html += "<p class='fail'>❌ " + permission + " : Missing (Leads will NOT flow)</p>";
-      }
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '122106621806930719',
+      cookie     : true,
+      xfbml      : false,
+      version    : 'v19.0'
     });
+  };
 
-    html += "<h3>User Role Check</h3>";
-    html += "<p class='fail'>❌ You are NOT a Page Admin</p>";
-    html += "<p>Only Page Admins can receive Facebook leads.</p>";
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "https://connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
 
-    html += "<h3>Overall Status</h3>";
-    html += "<p class='fail'>❌ Leads are blocked due to missing permissions or role issues.</p>";
+  function fbLogin() {
+    FB.login(function(response) {
+      if (!response.authResponse) {
+        document.getElementById('output').innerHTML =
+          "<p class='fail'>❌ Facebook login failed</p>";
+        return;
+      }
+      checkPermissions();
+    }, {
+      scope: 'pages_manage_metadata,pages_show_list,pages_read_engagement,leads_retrieval'
+    });
+  }
 
-    document.getElementById("result").innerHTML = html;
+  function checkPermissions() {
+    FB.api('/me/permissions', function(res) {
+      let html = "<h3>Permission Status</h3>";
+
+      const required = [
+        'pages_manage_metadata',
+        'pages_show_list',
+        'pages_read_engagement',
+        'leads_retrieval'
+      ];
+
+      required.forEach(p => {
+        const found = res.data.find(x => x.permission === p && x.status === 'granted');
+        if (found) {
+          html += `<p class="ok">✅ ${p} granted</p>`;
+        } else {
+          html += `<p class="fail">❌ ${p} missing or restricted</p>`;
+        }
+      });
+
+      html += "<p><b>Next:</b> If any permission is ❌, leads will NOT flow.</p>";
+
+      document.getElementById('output').innerHTML = html;
+    });
   }
 </script>
 
