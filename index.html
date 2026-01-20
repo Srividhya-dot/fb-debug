@@ -1,84 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Facebook Lead Debug</title>
+  <title>Facebook → CRM Debug (Simulation)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial; background:#f4f6f8; padding:20px; }
-    .card { background:#fff; padding:15px; margin-bottom:15px; border-radius:8px; }
-    .ok { color:green; }
-    .fail { color:red; }
-    button { padding:10px 20px; font-size:16px; }
+    h2 { margin-bottom: 10px; }
+    .card {
+      background:#fff;
+      padding:15px;
+      margin-bottom:15px;
+      border-radius:8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    button {
+      padding:10px 15px;
+      margin:5px;
+      cursor:pointer;
+    }
+    .ok { color: green; }
+    .fail { color: red; }
   </style>
 </head>
 <body>
 
-<h2>Facebook → CRM Debug Tool</h2>
+<h2>Facebook → CRM Debug Page (Dummy Simulation)</h2>
 
 <div class="card">
-  <button onclick="fbLogin()">Login with Facebook</button>
+  <p>Select a scenario to simulate:</p>
+  <button onclick="simulate('missing_permission')">Missing Permission</button>
+  <button onclick="simulate('not_admin')">Not Page Admin</button>
+  <button onclick="simulate('token_expired')">Token Expired</button>
+  <button onclick="simulate('all_ok')">All Good</button>
 </div>
 
-<div class="card" id="output">
-  <p>Login to start debugging.</p>
+<div class="card" id="result">
+  <p>No test run yet.</p>
 </div>
 
 <script>
-  window.fbAsyncInit = function() {
-    FB.init({
-      appId      : '122106621806930719',
-      cookie     : true,
-      xfbml      : false,
-      version    : 'v19.0'
-    });
-  };
+function simulate(type) {
 
-  (function(d, s, id){
-     var js, fjs = d.getElementsByTagName(s)[0];
-     if (d.getElementById(id)) {return;}
-     js = d.createElement(s); js.id = id;
-     js.src = "https://connect.facebook.net/en_US/sdk.js";
-     fjs.parentNode.insertBefore(js, fjs);
-   }(document, 'script', 'facebook-jssdk'));
+  let result = "";
 
-  function fbLogin() {
-    FB.login(function(response) {
-      if (!response.authResponse) {
-        document.getElementById('output').innerHTML =
-          "<p class='fail'>❌ Facebook login failed</p>";
-        return;
-      }
-      checkPermissions();
-    }, {
-      scope: 'pages_manage_metadata,pages_show_list,pages_read_engagement,leads_retrieval'
-    });
+  if (type === "missing_permission") {
+    result = `
+      <h3>Permission Check</h3>
+      <p class="fail">❌ leads_retrieval – Missing</p>
+      <p class="ok">✅ pages_manage_metadata – Granted</p>
+      <p class="ok">✅ pages_show_list – Granted</p>
+      <p class="fail">❌ pages_read_engagement – Missing</p>
+      <p><b>Result:</b> Leads will NOT flow.</p>
+    `;
   }
 
-  function checkPermissions() {
-    FB.api('/me/permissions', function(res) {
-      let html = "<h3>Permission Status</h3>";
-
-      const required = [
-        'pages_manage_metadata',
-        'pages_show_list',
-        'pages_read_engagement',
-        'leads_retrieval'
-      ];
-
-      required.forEach(p => {
-        const found = res.data.find(x => x.permission === p && x.status === 'granted');
-        if (found) {
-          html += `<p class="ok">✅ ${p} granted</p>`;
-        } else {
-          html += `<p class="fail">❌ ${p} missing or restricted</p>`;
-        }
-      });
-
-      html += "<p><b>Next:</b> If any permission is ❌, leads will NOT flow.</p>";
-
-      document.getElementById('output').innerHTML = html;
-    });
+  if (type === "not_admin") {
+    result = `
+      <h3>User Role Check</h3>
+      <p class="fail">❌ You are NOT a Page Admin</p>
+      <p><b>Result:</b> Leads will NOT flow.</p>
+    `;
   }
+
+  if (type === "token_expired") {
+    result = `
+      <h3>Access Token Check</h3>
+      <p class="fail">❌ Access token expired or revoked</p>
+      <p><b>Result:</b> Meta has blocked data access.</p>
+    `;
+  }
+
+  if (type === "all_ok") {
+    result = `
+      <h3>Status Check</h3>
+      <p class="ok">✅ All required permissions granted</p>
+      <p class="ok">✅ User is Page Admin</p>
+      <p class="ok">✅ Token active</p>
+      <p><b>Result:</b> Leads SHOULD flow. Check CRM if not.</p>
+    `;
+  }
+
+  document.getElementById("result").innerHTML = result;
+}
 </script>
 
 </body>
